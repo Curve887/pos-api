@@ -5,6 +5,8 @@ use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\Api\Auth\AuthController;
 use App\Http\Controllers\Api\Product\ProductController;
+use App\Http\Controllers\Api\Categories\CategoryController;
+use App\Http\Controllers\Api\Profile\ProfileController;
 
 /*
 |--------------------------------------------------------------------------
@@ -31,10 +33,9 @@ use App\Http\Controllers\Api\Product\ProductController;
     Route::middleware('auth:sanctum')->group(function() {
         // Group untuk AUTH
         Route::prefix('profile')->group(function () {
-            Route::get('/me', [AuthController::class, 'me']); // GET user yang sdg login
-            Route::get('/', [AuthController::class, 'getAllUser']); //  GET all users
-            Route::get('/{id}', [AuthController::class, 'getUserById']); // GET user by ID
-            Route::post('/logout', [AuthController::class, 'logout']); 
+            Route::get('/', [ProfileController::class, 'getAllUser']); //  GET all users
+            Route::get('/me', [ProfileController::class, 'me']); // GET user yang sdg login
+            Route::get('/{id}', [ProfileController::class, 'getUserById']); // GET user by ID
         });
         // Group untuk PRODUCT
         Route::prefix('products')->group(function () {
@@ -43,5 +44,14 @@ use App\Http\Controllers\Api\Product\ProductController;
             Route::get('/{id}', [ProductController::class, 'show']);           // GET detail produk
             Route::put('/{id}', [ProductController::class, 'update']);         // PUT update produk
             Route::delete('/{id}', [ProductController::class, 'destroy']);     // DELETE hapus produk
+            Route::post('/logout', [AuthController::class, 'logout']); 
+        });
+
+        Route::prefix('categories')->group(function () {
+            Route::get('/', [CategoryController::class, 'index']);
+            Route::post('/', [CategoryController::class, 'store']);
+            Route::get('/{id}', [CategoryController::class, 'show']);
+            Route::put('/{id}', [CategoryController::class, 'update']);
+            Route::delete('/{id}', [CategoryController::class, 'destroy']);  
         });
     });

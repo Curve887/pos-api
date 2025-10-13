@@ -8,37 +8,29 @@ use Illuminate\Support\Facades\DB;
 
 class ProductController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
+ 
+    private function baseProductQuery() {
+        
+         return DB::table('products')
+            ->join('categories', 'products.category_id', '=', 'categories.id')
+            ->select(
+                'products.id',
+                'products.name',
+                'products.price',
+                'products.stock',
+                'categories.name as category_name'
+            );
+    }
+
     public function index()
     {
-        $products = DB::table('products')
-        ->join('categories', 'products.category_id', '=', 'categories.id')
-        ->select(
-            'products.id',
-            'products.name',
-            'products.price',
-            'products.stock',
-            'categories.name as category'
-        )
-        ->get();
+        $products = $this->baseProductQuery()->get();
         return response()->json($products);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
+ 
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
+    public function store(Request $request){
        $data = $request->only(['name','price', 'stock', 'category_id']);
         
         DB::table('products')->insert($data);
@@ -46,55 +38,46 @@ class ProductController extends Controller
         return response()->json(['message' =>'Produk Berhasil Ditambahkan']);
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        $products = DB::table('products')
-        ->join('categories', 'products.category_id', '=', 'categories.id')
-        ->select(
-            'products.id',
-            'products.name',
-            'products.price',
-            'products.stock',
-            'categories.name as category_name'
-        )
-        ->where('id', $id)->first();
+    
 
-        if (!$products) {
+    public function show($id)
+     {
+        $product = $this->baseProductQuery()->where('products.id', $id)->first();
+
+        if (!$product) {
             return response()->json(['message' => 'Produk Tidak Ditemukan'], 404);
         }
 
-        return response()->json($products);
+        return response()->json($product);
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
     public function edit(string $id)
     {
         //
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
+
     public function update(Request $request, string $id)
     {
         $data = $request->only(['name','price', 'stock', 'category_id']);
+
+        if (!DB::table('products')->where('id', $id)->exists()) {
+            return response()->json(['message' => 'Produk Tidak Ditemukan'], 404);
+        }
 
         DB::table('products')->where('id', $id)->update($data);
         
         return response()->json(['message' => 'Produk Berhasil Diupdate']);
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
+
     public function destroy(string $id)
     {
         DB::table('products')->where('id', $id)->delete();
+
+        if (!DB::table('products')->where('id', $id)->exists()) {
+            return response()->json(['message' => 'Produk Tidak Ditemukan'], 404);
+        }
 
         return response()->json(['message' => 'Produk Berhasil Dihapus']);
     }
