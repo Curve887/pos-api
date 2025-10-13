@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\Auth\AuthController;
 use App\Http\Controllers\Api\Product\ProductController;
 use App\Http\Controllers\Api\Categories\CategoryController;
 use App\Http\Controllers\Api\Profile\ProfileController;
+use App\Http\Controllers\Api\Customer\CustomerController;
 
 /*
 |--------------------------------------------------------------------------
@@ -25,6 +26,11 @@ use App\Http\Controllers\Api\Profile\ProfileController;
         Route::post('/register', [AuthController::class, 'register']);
         Route::post('/login', [AuthController::class, 'login']);
     });
+    Route::prefix('customer')->group(function () {
+        Route::post('/register', [CustomerController::class, 'register']);
+        Route::post('/login', [CustomerController::class, 'login']);
+    });
+
 
     // ===============================
     // Protected routes (dengan Sanctum)
@@ -36,6 +42,7 @@ use App\Http\Controllers\Api\Profile\ProfileController;
             Route::get('/', [ProfileController::class, 'getAllUser']); //  GET all users
             Route::get('/me', [ProfileController::class, 'me']); // GET user yang sdg login
             Route::get('/{id}', [ProfileController::class, 'getUserById']); // GET user by ID
+            Route::post('/logout', [AuthController::class, 'logout']); 
         });
         // Group untuk PRODUCT
         Route::prefix('products')->group(function () {
@@ -44,14 +51,17 @@ use App\Http\Controllers\Api\Profile\ProfileController;
             Route::get('/{id}', [ProductController::class, 'show']);           // GET detail produk
             Route::put('/{id}', [ProductController::class, 'update']);         // PUT update produk
             Route::delete('/{id}', [ProductController::class, 'destroy']);     // DELETE hapus produk
-            Route::post('/logout', [AuthController::class, 'logout']); 
         });
-
+        // Group untuk CATEGORIES
         Route::prefix('categories')->group(function () {
             Route::get('/', [CategoryController::class, 'index']);
             Route::post('/', [CategoryController::class, 'store']);
             Route::get('/{id}', [CategoryController::class, 'show']);
             Route::put('/{id}', [CategoryController::class, 'update']);
             Route::delete('/{id}', [CategoryController::class, 'destroy']);  
+        });
+        // Group untuk CUSTOMER
+        Route::prefix('customer')->group(function () {
+            Route::post('/logout', [CustomerController::class, 'logout']);
         });
     });
