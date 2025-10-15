@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\Product\ProductController;
 use App\Http\Controllers\Api\Categories\CategoryController;
 use App\Http\Controllers\Api\Profile\ProfileController;
 use App\Http\Controllers\Api\Customer\CustomerController;
+use App\Http\Controllers\Api\Sales\SalesController;
 
 /*
 |--------------------------------------------------------------------------
@@ -63,5 +64,11 @@ use App\Http\Controllers\Api\Customer\CustomerController;
         // Group untuk CUSTOMER
         Route::prefix('customer')->group(function () {
             Route::post('/logout', [CustomerController::class, 'logout']);
+        });
+        // Group untuk SALES
+        Route::prefix('sales')->group(function () {
+            Route::get('/', [SalesController::class, 'index']);
+            Route::post('/', [SalesController::class, 'store']);
+            Route::get('/{id}', [SalesController::class, 'show']);
         });
     });
