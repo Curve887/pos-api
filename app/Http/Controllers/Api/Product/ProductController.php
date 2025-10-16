@@ -25,7 +25,7 @@ class ProductController extends Controller
     public function index()
     {
         try {
-            $products = $this->baseProductQuery()->get();
+            $products = $this->baseProductQuery()->orderBy('products.id', 'asc')->get();
 
             return response()->json([
                 'success' => true,

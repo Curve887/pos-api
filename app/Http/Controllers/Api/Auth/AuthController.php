@@ -20,7 +20,7 @@ class AuthController extends Controller
                 'email' => 'required|email|unique:users,email',
                 'password' => 'required|string|min:6',
                 'role_id' => 'nullable|integer|exists:roles,id',
-                'profile_image' => 'nullable|image|mimes:jpg,jpeg,png|max:5120', // naik jadi 5MB
+                'profile_image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048', // naik jadi 5MB
             ]);
 
             $roleId = $validated['role_id'] ?? 2;

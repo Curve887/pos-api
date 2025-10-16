@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\Categories\CategoryController;
 use App\Http\Controllers\Api\Profile\ProfileController;
 use App\Http\Controllers\Api\Customer\CustomerController;
 use App\Http\Controllers\Api\Sales\SalesController;
+use App\Http\Controllers\Api\SaleItem\SaleItemController;
 
 /*
 |--------------------------------------------------------------------------
@@ -20,6 +21,10 @@ use App\Http\Controllers\Api\Sales\SalesController;
 | be assigned to the "api" middleware group. Make something great!
 |
 */
+
+// header('Access-Control-Allow-Methods: GET, POST, PATCH, PUT, DELETE, OPTIONS');
+// header('Access-Control-Allow-Headers: Origin, Content-Type, X-Auth-Token, Authorization, Accept,charset,boundary,Content-Length');
+// header('Access-Control-Allow-Origin: *');
 
     // Public routes (tanpa auth)
 
@@ -50,7 +55,7 @@ use App\Http\Controllers\Api\Sales\SalesController;
             Route::get('/', [ProductController::class, 'index']);              // GET semua produk
             Route::post('/', [ProductController::class, 'store']);             // POST tambah produk
             Route::get('/{id}', [ProductController::class, 'show']);           // GET detail produk
-            Route::put('/{id}', [ProductController::class, '    ']);         // PUT update produk
+            Route::post('/{id}', [ProductController::class, 'update']);         // PUT update produk
             Route::delete('/{id}', [ProductController::class, 'destroy']);     // DELETE hapus produk
         });
         // Group untuk CATEGORIES
@@ -70,5 +75,15 @@ use App\Http\Controllers\Api\Sales\SalesController;
             Route::get('/', [SalesController::class, 'index']);
             Route::post('/', [SalesController::class, 'store']);
             Route::get('/{id}', [SalesController::class, 'show']);
+            Route::post('/{id}', [SalesController::class, 'update']);
+            Route::delete('/{id}', [SalesController::class, 'destroy']);
+        });
+        // Group untuk SALE ITEMS
+        Route::middleware('auth:sanctum')->prefix('sale-items')->group(function () {
+            Route::get('/', [SaleItemController::class, 'index']);       // GET semua item
+            Route::post('/', [SaleItemController::class, 'store']);      // POST tambah item
+            Route::get('/{id}', [SaleItemController::class, 'show']);    // GET detail item
+            Route::put('/{id}', [SaleItemController::class, 'update']);  // PUT update item
+            Route::delete('/{id}', [SaleItemController::class, 'destroy']); // DELETE hapus item
         });
     });

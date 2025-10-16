@@ -47,6 +47,7 @@ class ProfileController extends Controller
             $users = DB::table('users')
                 ->join('roles', 'roles.id', '=', 'users.role_id')
                 ->select('users.id', 'users.name', 'users.email', 'users.profile_image', 'roles.name as role')
+                ->orderBy('users.id', 'asc')
                 ->get();
 
             return response()->json([

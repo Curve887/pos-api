@@ -89,7 +89,6 @@ class SalesController extends Controller
         try {
             $invoiceNumber = 'INV-' . now()->format('YmdHis');
 
-            // user_id ambil dari token, bukan dari body
             $saleId = DB::table('sales')->insertGetId([
                 'user_id'        => $user->id,
                 'customer_id'    => $request->customer_id,
@@ -202,6 +201,111 @@ class SalesController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Gagal mengambil detail transaksi.',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Update transaksi penjualan
+     */
+    public function update(Request $request, $id)
+    {
+        $user = $request->user();
+
+        if ($user->role_id != 2) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Akses ditolak! Hanya kasir yang dapat mengubah transaksi.'
+            ], 403);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'payment_method' => 'nullable|string|in:cash,transfer,qris',
+            'total_amount'   => 'nullable|numeric|min:0',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validasi gagal',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+
+        try {
+            $updated = DB::table('sales')
+                ->where('id', $id)
+                ->update([
+                    'payment_method' => $request->payment_method,
+                    'total_amount'   => $request->total_amount,
+                    'updated_at'     => now(),
+                ]);
+
+            if (!$updated) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Transaksi tidak ditemukan atau tidak ada perubahan',
+                ], 404);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Transaksi berhasil diperbarui',
+            ], 200);
+
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memperbarui transaksi',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+     * Hapus transaksi (dan item terkait)
+     */
+    public function destroy($id, Request $request)
+    {
+        $user = $request->user();
+
+        if ($user->role_id != 2) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Akses ditolak! Hanya kasir yang dapat menghapus transaksi.'
+            ], 403);
+        }
+
+        DB::beginTransaction();
+        try {
+            $sale = DB::table('sales')->where('id', $id)->first();
+
+            if (!$sale) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Transaksi tidak ditemukan',
+                ], 404);
+            }
+
+            // Hapus item terlebih dahulu
+            DB::table('sale_items')->where('sale_id', $id)->delete();
+
+            // Hapus transaksi utama
+            DB::table('sales')->where('id', $id)->delete();
+
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Transaksi berhasil dihapus',
+            ], 200);
+
+        } catch (Exception $e) {
+            DB::rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menghapus transaksi',
                 'error' => $e->getMessage(),
             ], 500);
         }
