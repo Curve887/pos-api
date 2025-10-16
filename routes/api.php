@@ -87,3 +87,5 @@ use App\Http\Controllers\Api\SaleItem\SaleItemController;
             Route::delete('/{id}', [SaleItemController::class, 'destroy']); // DELETE hapus item
         });
     });
+    
+    //
