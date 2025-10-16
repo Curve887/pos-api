@@ -5,13 +5,13 @@ namespace App\Http\Controllers\Api\Product;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Exception;
 
 class ProductController extends Controller
 {
- 
-    private function baseProductQuery() {
-        
-         return DB::table('products')
+    private function baseProductQuery()
+    {
+        return DB::table('products')
             ->join('categories', 'products.category_id', '=', 'categories.id')
             ->select(
                 'products.id',
@@ -24,61 +24,148 @@ class ProductController extends Controller
 
     public function index()
     {
-        $products = $this->baseProductQuery()->get();
-        return response()->json($products);
+        try {
+            $products = $this->baseProductQuery()->get();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Daftar produk berhasil diambil.',
+                'data' => $products
+            ], 200);
+
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan saat mengambil data produk.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
 
- 
+    public function store(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'name' => 'required|string|max:100',
+                'price' => 'required|numeric|min:0',
+                'stock' => 'required|integer|min:0',
+                'category_id' => 'required|exists:categories,id'
+            ]);
 
-    public function store(Request $request){
-       $data = $request->only(['name','price', 'stock', 'category_id']);
-        
-        DB::table('products')->insert($data);
+            DB::table('products')->insert($validated);
 
-        return response()->json(['message' =>'Produk Berhasil Ditambahkan']);
+            return response()->json([
+                'success' => true,
+                'message' => 'Produk berhasil ditambahkan.'
+            ], 201);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validasi gagal.',
+                'errors' => $e->errors()
+            ], 422);
+
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menambahkan produk.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
     }
-
-    
 
     public function show($id)
-     {
-        $product = $this->baseProductQuery()->where('products.id', $id)->first();
-
-        if (!$product) {
-            return response()->json(['message' => 'Produk Tidak Ditemukan'], 404);
-        }
-
-        return response()->json($product);
-    }
-
-    public function edit(string $id)
     {
-        //
-    }
+        try {
+            $product = $this->baseProductQuery()->where('products.id', $id)->first();
 
+            if (!$product) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Produk tidak ditemukan.'
+                ], 404);
+            }
+
+            return response()->json([
+                'success' => true,
+                'data' => $product
+            ], 200);
+
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengambil data produk.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
 
     public function update(Request $request, string $id)
     {
-        $data = $request->only(['name','price', 'stock', 'category_id']);
+        try {
+            $validated = $request->validate([
+                'name' => 'required|string|max:100',
+                'price' => 'required|numeric|min:0',
+                'stock' => 'required|integer|min:0',
+                'category_id' => 'required|exists:categories,id'
+            ]);
 
-        if (!DB::table('products')->where('id', $id)->exists()) {
-            return response()->json(['message' => 'Produk Tidak Ditemukan'], 404);
+            if (!DB::table('products')->where('id', $id)->exists()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Produk tidak ditemukan.'
+                ], 404);
+            }
+
+            DB::table('products')->where('id', $id)->update($validated);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Produk berhasil diperbarui.'
+            ], 200);
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validasi gagal.',
+                'errors' => $e->errors()
+            ], 422);
+
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memperbarui produk.',
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-        DB::table('products')->where('id', $id)->update($data);
-        
-        return response()->json(['message' => 'Produk Berhasil Diupdate']);
     }
-
 
     public function destroy(string $id)
     {
-        DB::table('products')->where('id', $id)->delete();
+        try {
+            $product = DB::table('products')->where('id', $id)->first();
 
-        if (!DB::table('products')->where('id', $id)->exists()) {
-            return response()->json(['message' => 'Produk Tidak Ditemukan'], 404);
+            if (!$product) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Produk tidak ditemukan.'
+                ], 404);
+            }
+
+            DB::table('products')->where('id', $id)->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Produk berhasil dihapus.'
+            ], 200);
+
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menghapus produk.',
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-        return response()->json(['message' => 'Produk Berhasil Dihapus']);
     }
 }

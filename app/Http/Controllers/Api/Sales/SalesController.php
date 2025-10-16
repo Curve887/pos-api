@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Exception;
 
 class SalesController extends Controller
 {
@@ -20,26 +21,35 @@ class SalesController extends Controller
      */
     public function index()
     {
-        $sales = DB::table('sales')
-            ->join('users', 'sales.user_id', '=', 'users.id')
-            ->leftJoin('customers', 'sales.customer_id', '=', 'customers.id')
-            ->select(
-                'sales.id',
-                'sales.invoice_number',
-                'sales.total_amount',
-                'sales.payment_method',
-                'users.name as kasir',
-                'customers.name as customer',
-                'sales.created_at'
-            )
-            ->orderByDesc('sales.created_at')
-            ->get();
+        try {
+            $sales = DB::table('sales')
+                ->join('users', 'sales.user_id', '=', 'users.id')
+                ->leftJoin('customers', 'sales.customer_id', '=', 'customers.id')
+                ->select(
+                    'sales.id',
+                    'sales.invoice_number',
+                    'sales.total_amount',
+                    'sales.payment_method',
+                    'users.name as kasir',
+                    'customers.name as customer',
+                    'sales.created_at'
+                )
+                ->orderByDesc('sales.created_at')
+                ->get();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Daftar transaksi penjualan',
-            'data' => $sales,
-        ], 200);
+            return response()->json([
+                'success' => true,
+                'message' => 'Daftar transaksi penjualan',
+                'data' => $sales,
+            ], 200);
+
+        } catch (Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mengambil data penjualan.',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
     }
 
     /**
@@ -103,6 +113,7 @@ class SalesController extends Controller
                     'updated_at' => now(),
                 ]);
 
+                // Kurangi stok produk
                 DB::table('products')
                     ->where('id', $item['product_id'])
                     ->decrement('stock', $item['quantity']);
@@ -118,7 +129,8 @@ class SalesController extends Controller
                     'invoice_number' => $invoiceNumber,
                 ],
             ], 201);
-        } catch (\Exception $e) {
+
+        } catch (Exception $e) {
             DB::rollBack();
             return response()->json([
                 'success' => false,
@@ -133,56 +145,65 @@ class SalesController extends Controller
      */
     public function show($id, Request $request)
     {
-        $user = $request->user();
+        try {
+            $user = $request->user();
 
-        // Hanya kasir yang boleh melihat detail transaksi
-        if ($user->role_id != 2) {
+            // Hanya kasir yang boleh melihat detail transaksi
+            if ($user->role_id != 2) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Akses ditolak! Hanya kasir yang dapat melihat detail transaksi.'
+                ], 403);
+            }
+
+            $sale = DB::table('sales')
+                ->leftJoin('customers', 'sales.customer_id', '=', 'customers.id')
+                ->join('users', 'sales.user_id', '=', 'users.id')
+                ->select(
+                    'sales.id',
+                    'sales.invoice_number',
+                    'sales.total_amount',
+                    'sales.payment_method',
+                    'sales.created_at',
+                    'users.name as kasir',
+                    'customers.name as customer'
+                )
+                ->where('sales.id', $id)
+                ->first();
+
+            if (!$sale) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Transaksi tidak ditemukan',
+                ], 404);
+            }
+
+            $items = DB::table('sale_items')
+                ->join('products', 'sale_items.product_id', '=', 'products.id')
+                ->where('sale_items.sale_id', $id)
+                ->select(
+                    'products.name as product_name',
+                    'sale_items.quantity',
+                    'sale_items.price',
+                    'sale_items.subtotal'
+                )
+                ->get();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Detail transaksi ditemukan',
+                'data' => [
+                    'sale' => $sale,
+                    'items' => $items,
+                ],
+            ], 200);
+
+        } catch (Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Akses ditolak! Hanya kasir yang dapat melihat detail transaksi.'
-            ], 403);
+                'message' => 'Gagal mengambil detail transaksi.',
+                'error' => $e->getMessage(),
+            ], 500);
         }
-
-        $sale = DB::table('sales')
-            ->leftJoin('customers', 'sales.customer_id', '=', 'customers.id')
-            ->join('users', 'sales.user_id', '=', 'users.id')
-            ->select(
-                'sales.id',
-                'sales.invoice_number',
-                'sales.total_amount',
-                'sales.payment_method',
-                'sales.created_at',
-                'users.name as kasir',
-                'customers.name as customer'
-            )
-            ->where('sales.id', $id)
-            ->first();
-
-        if (!$sale) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Transaksi tidak ditemukan',
-            ], 404);
-        }
-
-        $items = DB::table('sale_items')
-            ->join('products', 'sale_items.product_id', '=', 'products.id')
-            ->where('sale_items.sale_id', $id)
-            ->select(
-                'products.name as product_name',
-                'sale_items.quantity',
-                'sale_items.price',
-                'sale_items.subtotal'
-            )
-            ->get();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Detail transaksi ditemukan',
-            'data' => [
-                'sale' => $sale,
-                'items' => $items,
-            ],
-        ], 200);
     }
 }

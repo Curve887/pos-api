@@ -31,8 +31,7 @@ use App\Http\Controllers\Api\Sales\SalesController;
         Route::post('/register', [CustomerController::class, 'register']);
         Route::post('/login', [CustomerController::class, 'login']);
     });
-
-
+    
     // ===============================
     // Protected routes (dengan Sanctum)
     // ===============================
@@ -43,6 +42,7 @@ use App\Http\Controllers\Api\Sales\SalesController;
             Route::get('/', [ProfileController::class, 'getAllUser']); //  GET all users
             Route::get('/me', [ProfileController::class, 'me']); // GET user yang sdg login
             Route::get('/{id}', [ProfileController::class, 'getUserById']); // GET user by ID
+            Route::post('/update', [ProfileController::class, 'updateProfile']); // GET user by ID
             Route::post('/logout', [AuthController::class, 'logout']); 
         });
         // Group untuk PRODUCT
@@ -50,7 +50,7 @@ use App\Http\Controllers\Api\Sales\SalesController;
             Route::get('/', [ProductController::class, 'index']);              // GET semua produk
             Route::post('/', [ProductController::class, 'store']);             // POST tambah produk
             Route::get('/{id}', [ProductController::class, 'show']);           // GET detail produk
-            Route::put('/{id}', [ProductController::class, 'update']);         // PUT update produk
+            Route::put('/{id}', [ProductController::class, '    ']);         // PUT update produk
             Route::delete('/{id}', [ProductController::class, 'destroy']);     // DELETE hapus produk
         });
         // Group untuk CATEGORIES
